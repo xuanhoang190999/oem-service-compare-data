@@ -21,5 +21,20 @@ APIS = [
         "name": "DTCs Definition",
         "input": "dtcs_definition.xlsx",
         "output": "dtcs_definition_result.xlsx",
+    },
+    {
+        "name": "OEM LiveData",
+        "input": "oem_livedata.xlsx",
+        "output": "oem_livedata_result.xlsx",
+    },
+    {
+        "name": "OEM Module Name",
+        "input": "oem_module_name.xlsx",
+        "output": "oem_module_name_result.xlsx",
+    },
+    {
+        "name": "Option List",
+        "input": "option_list.xlsx",
+        "output": "option_list_result.xlsx",
     }
 ]

@@ -103,3 +103,101 @@ def dtcs_definition_graphql(raw64: str):
     """
 
     return call_graphql(query)
+
+def oem_livedata_graphql (
+    payloads: list[str],
+    language: int = 1,
+    unit_system: int = 1,
+    vin: str = None,
+    year: int = None,
+    make: str = None,
+    model: str = None,
+    engine: str = None,
+    trim: str = None,
+    option: str = None
+):
+    query = ""
+    payload_str = "[" + ",".join(f'"{p}"' for p in payloads) + "]"
+
+    if vin is not None:
+        query = f"""
+        {{
+            oemLiveItems(vin: "{vin}", payloads: {payload_str}, language: {language}, unitSystem: {unit_system}) {{
+                data {{
+                    itemid
+                    itemname
+                    itemdescription
+                    value
+                    unit
+                    text
+                    itemdescription_enum
+                }}
+            }}
+        }}
+        """
+    else:
+        query = f"""
+        {{
+            oemLiveItems(
+                year: {year},
+                make: {make},
+                model: {model},
+                engine: {engine},
+                trim: {trim},
+                option: {option},
+                payloads: [{payload_str}],
+                language: {language},
+                unitSystem: {unit_system}
+            ) {{
+                data {{
+                    itemid
+                    itemname
+                    itemdescription
+                    value
+                    unit
+                    text
+                    itemdescription_enum
+                }}
+            }}
+        }}
+        """
+
+    return call_graphql(query)
+
+def oem_module_name_graphql(make: int, type_str: str, ids: list[int]):
+
+    ids_str = ",".join(str(x) for x in ids)
+
+    query = f"""
+    {{
+        enums(make: {make}, type: "{type_str}", ids: [{ids_str}]) {{
+            edges {{
+                node {{
+                    key
+                    value
+                    english
+                    spanish
+                    french
+                }}
+            }}
+        }}
+    }}
+    """
+
+    return call_graphql(query)
+
+def option_list_graphql(vin: str):
+    query = f"""
+    {{
+        getOptionList (vin: "{vin}") {{
+            data {{
+                option_enum
+                option1
+                option2
+                option3
+            }}
+        }}
+    }}
+    """
+
+    return call_graphql(query)

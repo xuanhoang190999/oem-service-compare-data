@@ -10,7 +10,7 @@ def main():
     for api in APIS:
         logger.info(f"--- Processing API: {api["name"]} ---")
 
-        if (api["name"] != "DTCs Definition"):
+        if (api["name"] != "Option List"):
             continue
 
         name = api["name"]
