@@ -1,0 +1,105 @@
+import pandas as pd
+import requests
+
+GRAPHQL_API_URL = "http://34.210.160.172:4000/graphql"
+
+def call_graphql(query: str):
+    payload = {"query": query}
+    response = requests.post(GRAPHQL_API_URL, json=payload)
+    if response.status_code == 200:
+        return response.json().get("data")
+    else:
+        print(f"[GraphQL Error] {response.status_code}: {response.text}")
+        return None
+
+def get_ymme_graphql(market: str, year=None, make=None, model=None, trim=None, option=None):
+    params = [f'db_market: "{market}"']
+
+    if pd.notna(year):
+        params.append(f"year: {int(year)}")
+    if pd.notna(make):
+        params.append(f"make: {int(make)}")
+    if pd.notna(model):
+        params.append(f"model: {int(model)}")
+    if pd.notna(trim):
+        params.append(f"trim: {int(trim)}")
+    if pd.notna(option):
+        params.append(f"option: {int(option)}")
+
+    param_str = ", ".join(params)
+
+    query = f"""{{
+        ymmes({param_str}) {{
+            text
+            enum
+        }}
+    }}"""
+
+    return call_graphql(query)
+
+def vin_profile_graphql(raw64: str):
+    query = f"""
+    {{
+        report(raw64: "{raw64}", language: 1) {{
+            vinProfile {{
+                vin
+                year
+                make
+                manufacturer
+                model
+                engine
+                trim
+                option
+                transmission
+                bodyCode
+                _make_enum
+                year_enum
+                make_enum
+                manufacturer_enum
+                model_enum
+                engine_enum
+                trim_enum
+                option_enum
+                transmission_enum
+                bodyCode_enum
+            }}
+        }}
+    }}
+    """
+
+    return call_graphql(query)
+
+def vehicle_profile_graphql(vin: str):
+    query = f"""
+    {{
+        getProfile(vin: "{vin}", compress: true) {{
+            profile_base64
+            profile_crc32
+            profile_size
+        }}
+    }}
+    """
+
+    return call_graphql(query)
+
+def dtcs_definition_graphql(raw64: str):
+    query = f"""
+    {{
+        report(raw64: "{raw64}", language: 1) {{
+                dtcs {{
+                    code
+                    definition
+                    type
+                    recommendstatus
+                    systemName
+                    system_enum
+                    subsystemName
+                    subsystem_enum
+                    modulename
+                    severity
+                }}
+            }}
+    }}
+    """
+
+    return call_graphql(query)

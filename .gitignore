@@ -1,0 +1,8 @@
+output/*.xls
+output/*.xlsx
+output/*.xlsm
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
