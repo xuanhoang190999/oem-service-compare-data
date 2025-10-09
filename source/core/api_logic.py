@@ -2,10 +2,10 @@ import pandas as pd
 from source.utils.excel_io import read_input_excel, write_output_excel
 from source.utils.utils import setup_logger, safe_int, normalize_for_compare, get_object_by_key
 
-from source.config.graphql_common import ( get_ymme_graphql, vin_profile_graphql, vehicle_profile_graphql, 
+from source.apis.graphql_apis import ( get_ymme_graphql, vin_profile_graphql, vehicle_profile_graphql, 
 dtcs_definition_graphql, oem_livedata_graphql, oem_module_name_graphql, option_list_graphql )
 
-from source.config.rest_common import ( get_ymme_rest, decode_vin_rest, vin_profile_rest, vehicle_profile_rest,
+from source.apis.rest_apis import ( get_ymme_rest, decode_vin_rest, vin_profile_rest, vehicle_profile_rest,
 dtcs_definition_rest, oem_livedata_rest, oem_module_name_rest, option_list_rest )
 
 from source.core.compare import compare_api_responses

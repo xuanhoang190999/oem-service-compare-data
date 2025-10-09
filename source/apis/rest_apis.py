@@ -1,9 +1,8 @@
 import requests
-
-REST_API_BASE_URL = "http://18.142.11.42:5672/api"
+from source.config.settings import REST_API_URL
 
 def call_rest_get(endpoint: str, params: dict = None):
-    url = f"{REST_API_BASE_URL}/{endpoint}"
+    url = f"{REST_API_URL}/{endpoint}"
     try:
         response = requests.get(url, params={k: v for k, v in (params or {}).items() if v not in [None, ""]})
         response.raise_for_status()
@@ -16,7 +15,7 @@ def call_rest_get(endpoint: str, params: dict = None):
         return None
 
 def call_rest_post(endpoint: str, data: dict = None):
-    url = f"{REST_API_BASE_URL}/{endpoint}"
+    url = f"{REST_API_URL}/{endpoint}"
     try:
         response = requests.post(url, json=data)
         response.raise_for_status()
