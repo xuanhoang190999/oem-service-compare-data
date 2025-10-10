@@ -1,47 +1,47 @@
 {
-  "GRAPHQL_API_URL": "http://34.210.160.172:4000/graphql",
-  "REST_API_URL": "http://18.142.11.42:5672/api",
+  "GRAPHQL_API_URL": "http://staging1-parser.innova.com:4000/graphql",
+  "REST_API_URL": "https://stg-wm-oem.innova.com/v16-01/api",
   "APIS": [
     {
       "name": "YMME",
       "input": "ymme.xlsx",
-      "output": "ymme_result.xlsx",
-      "enabled": false
+      "output": "ymme_result",
+      "enabled": true
     },
     {
       "name": "VIN Profile",
       "input": "vin_profile.xlsx",
-      "output": "vin_profile_result.xlsx",
-      "enabled": false
+      "output": "vin_profile_result",
+      "enabled": true
     },
     {
       "name": "Vehicle Profile",
       "input": "vehicle_profile.xlsx",
-      "output": "vehicle_profile_result.xlsx",
-      "enabled": false
+      "output": "vehicle_profile_result",
+      "enabled": true
     },
     {
       "name": "DTCs Definition",
       "input": "dtcs_definition.xlsx",
-      "output": "dtcs_definition_result.xlsx",
-      "enabled": false
+      "output": "dtcs_definition_result",
+      "enabled": true
     },
     {
       "name": "OEM LiveData",
       "input": "oem_livedata.xlsx",
-      "output": "oem_livedata_result.xlsx",
-      "enabled": false
+      "output": "oem_livedata_result",
+      "enabled": true
     },
     {
       "name": "OEM Module Name",
       "input": "oem_module_name.xlsx",
-      "output": "oem_module_name_result.xlsx",
-      "enabled": false
+      "output": "oem_module_name_result",
+      "enabled": true
     },
     {
       "name": "Option List",
       "input": "option_list.xlsx",
-      "output": "option_list_result.xlsx",
+      "output": "option_list_result",
       "enabled": true
     }
   ]

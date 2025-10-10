@@ -125,6 +125,7 @@ def oem_livedata_graphql (
                 data {{
                     itemid
                     itemname
+                    itemname_enum
                     itemdescription
                     value
                     unit
