@@ -1,9 +1,7 @@
 import os
 import pandas as pd
 from datetime import datetime
-
-INPUT_DIR = os.path.join(os.getcwd(), "Input")
-OUTPUT_DIR = os.path.join(os.getcwd(), "Output")
+from source.config.settings import INPUT_DIR, OUTPUT_DIR
 
 def read_input_excel(filename: str) -> pd.DataFrame:
     filepath = os.path.join(INPUT_DIR, filename)

@@ -10,9 +10,6 @@ def main():
     for api in APIS:
         logger.info(f"--- Processing API: {api["name"]} ---")
 
-        if (api["name"] != "Option List"):
-            continue
-
         name = api["name"]
         input_file = api["input"]
         output_file = api["output"]

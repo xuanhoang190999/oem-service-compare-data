@@ -1,7 +1,6 @@
 import pandas as pd
 import requests
-
-GRAPHQL_API_URL = "http://34.210.160.172:4000/graphql"
+from source.config.settings import GRAPHQL_API_URL
 
 def call_graphql(query: str):
     payload = {"query": query}

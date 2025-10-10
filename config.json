@@ -1,0 +1,48 @@
+{
+  "GRAPHQL_API_URL": "http://34.210.160.172:4000/graphql",
+  "REST_API_URL": "http://18.142.11.42:5672/api",
+  "APIS": [
+    {
+      "name": "YMME",
+      "input": "ymme.xlsx",
+      "output": "ymme_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "VIN Profile",
+      "input": "vin_profile.xlsx",
+      "output": "vin_profile_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "Vehicle Profile",
+      "input": "vehicle_profile.xlsx",
+      "output": "vehicle_profile_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "DTCs Definition",
+      "input": "dtcs_definition.xlsx",
+      "output": "dtcs_definition_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "OEM LiveData",
+      "input": "oem_livedata.xlsx",
+      "output": "oem_livedata_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "OEM Module Name",
+      "input": "oem_module_name.xlsx",
+      "output": "oem_module_name_result.xlsx",
+      "enabled": false
+    },
+    {
+      "name": "Option List",
+      "input": "option_list.xlsx",
+      "output": "option_list_result.xlsx",
+      "enabled": true
+    }
+  ]
+}
