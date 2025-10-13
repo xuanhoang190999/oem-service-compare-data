@@ -1,5 +1,5 @@
 import pandas as pd
-from source.utils.excel_io import read_input_excel, write_output_excel
+from source.utils.excel_io import read_input_excel, write_output_excel_table
 from source.utils.utils import setup_logger, safe_int, normalize_for_compare, get_object_by_key
 
 from source.apis.graphql_apis import ( get_ymme_graphql, vin_profile_graphql, vehicle_profile_graphql, 
@@ -8,11 +8,13 @@ dtcs_definition_graphql, oem_livedata_graphql, oem_module_name_graphql, option_l
 from source.apis.rest_apis import ( get_ymme_rest, decode_vin_rest, vin_profile_rest, vehicle_profile_rest,
 dtcs_definition_rest, oem_livedata_rest, oem_module_name_rest, option_list_rest )
 
-from source.core.compare import compare_api_responses
+from source.core.compare import compare_api_responses, custom_compare_api_responses, custom_compare_ignore_sort_api_responses
 from source.core.raw import build_oem_module_raw_data
 from source.core.payload import get_payloads_by_service_check_raw
 
+# from source.config.settings import IS_IGNORE_SORT
 from source.utils.utils import setup_logger
+
 logger = setup_logger()
 
 def compare_api_ymme(input_file, output_file):
@@ -20,7 +22,8 @@ def compare_api_ymme(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")}  ---")
 
         try:
             vin = row.get("VIN")
@@ -43,43 +46,40 @@ def compare_api_ymme(input_file, output_file):
                 market=market, year=year, make=make, model=model, trim=trim, option=option
             )
 
-            rest_norm, graphql_norm = normalize_for_compare(rest_response, graphql_response, key="ymmes")
-            differences = compare_api_responses(graphql_norm, rest_norm, row_index=idx + 1)
+            graphql_norm = get_object_by_key(graphql_response, "ymmes")
+            rest_norm = rest_response
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            differences = custom_compare_api_responses(graphql_norm, rest_norm, row_index)
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error in row: {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
-                "VIN": "",
+                "Row Index": row_index,
+                "VIN": vin,
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_vin_profile(input_file, output_file):
@@ -87,57 +87,53 @@ def compare_api_vin_profile(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")} ---")
 
         try:
             vin = row.get("VIN")
             vin_profile_raw = row.get("VINProfile")
 
             oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, [])
+            logger.info(f"Raw64: {oem_module_raw_data}")
 
-            graphql_response = vin_profile_graphql(raw64=oem_module_raw_data)
-            # rest_response = vin_profile_rest(raw64=oem_module_raw_data, language=1)
-            rest_response = decode_vin_rest(vin=vin)
+            graphql_response = vin_profile_graphql(oem_module_raw_data)
+            rest_response = decode_vin_rest(vin)
 
-            rest_norm = rest_response
             graphql_norm = get_object_by_key(graphql_response, "report.vinProfile")
+            rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_response, row_index=idx + 1)
+            differences = custom_compare_api_responses(graphql_norm, rest_response, row_index)
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
-
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error in row: {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
+                "Row Index": row_index,
                 "VIN": "",
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_vehicle_profile(input_file, output_file):
@@ -145,53 +141,52 @@ def compare_api_vehicle_profile(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")} ---")
+
+        # if (idx >= 20):
+        #     break
 
         try:
             vin = row.get("VIN")
 
-            graphql_response = vehicle_profile_graphql(vin=vin)
-            rest_response = vehicle_profile_rest(vin=vin)
+            graphql_response = vehicle_profile_graphql(vin)
+            rest_response = vehicle_profile_rest(vin)
 
+            graphql_norm = get_object_by_key(graphql_response, "getProfile")
             rest_norm = rest_response
-            graphql_norm = get_object_by_key(graphql_response, "data.getProfile")
 
-            differences = compare_api_responses(graphql_norm, rest_response, row_index=idx + 1)
+            differences = custom_compare_api_responses(graphql_norm, rest_response, row_index)
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
-
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
             logger.error(f"Error in row: {idx + 1}: {ex}")
             all_results.append({
-                "RowIndex": "",
+                "Row Index": row_index,
                 "VIN": "",
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_dtcs_definition(input_file, output_file):
@@ -199,7 +194,8 @@ def compare_api_dtcs_definition(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")} ---")
 
         try:
             vin = row.get("VIN")
@@ -208,49 +204,45 @@ def compare_api_dtcs_definition(input_file, output_file):
             oem_module_buffer_raw_list = oem_module_buffer_raw.split(",")
 
             oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, oem_module_buffer_raw_list)
+            logger.info(f"Raw64: {oem_module_raw_data}")
 
             graphql_response = dtcs_definition_graphql(raw64=oem_module_raw_data)
             rest_response = dtcs_definition_rest(raw64=oem_module_raw_data)
 
-            rest_norm = rest_response
             graphql_norm = get_object_by_key(graphql_response, "report.dtcs")
+            rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_response, row_index=idx + 1)
+            differences = custom_compare_api_responses(graphql_norm, rest_response, row_index)
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
-
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error in row: {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
+                "Row Index": row_index,
                 "VIN": "",
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_oem_livedata(input_file, output_file):
@@ -258,68 +250,70 @@ def compare_api_oem_livedata(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")}  ---")
 
         try:
             vin = row.get("VIN")
             service_check_raw = row.get("Payload")
 
-            # decode payloads by service_check_raw
             payloads = get_payloads_by_service_check_raw(vin, service_check_raw)
+            logger.info(f"Payloads: {payloads}")
 
-            graphql_response = oem_livedata_graphql (
-                vin=vin,
-                payloads=payloads,
-                language=1,
-                unit_system=1
+            graphql_response = oem_livedata_graphql(
+                vin=vin, payloads=payloads, language=1, unit_system=1
             )
-            
             rest_response = oem_livedata_rest(
-                vin=vin,
-                payloads=payloads,
-                language=1,
-                unit_system=1
+                vin=vin, payloads=payloads, language=1, unit_system=1
             )
 
-            rest_norm = rest_response
             graphql_norm = get_object_by_key(graphql_response, "oemLiveItems.data")
+            rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_norm, row_index=idx + 1)
+            # graphql_norm = sorted(graphql_norm, key=lambda x: x.get("itemid", 0))
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            # graphql_norm.append({
+            #     "itemid": 114,
+            #     "itemname": None,
+            #     "itemname_enum": None,
+            #     "itemdescription": "Brake Pad Check",
+            #     "value": "Not present",
+            #     "unit": "",
+            #     "text": "Not present",
+            #     "itemdescription_enum": 1049
+            # })
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
+            differences = custom_compare_api_responses(graphql_norm, rest_norm, row_index)
 
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
+
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error row {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
-                "VIN": "",
+                "Row Index": row_index,
+                "VIN": vin,
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_oem_module_name(input_file, output_file):
@@ -327,7 +321,8 @@ def compare_api_oem_module_name(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")}  ---")
 
         try:
             vin = row.get("VIN")
@@ -354,45 +349,40 @@ def compare_api_oem_module_name(input_file, output_file):
                 ids=ids
             )
 
-            rest_norm = rest_response
             graphql_norm = get_object_by_key(graphql_response, "enums.edges")
+            rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_norm, row_index=idx + 1)
+            differences = custom_compare_api_responses(graphql_norm, rest_norm, row_index)
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
-
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error in row: {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
+                "Row Index": row_index,
                 "VIN": "",
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
 
 def compare_api_option_list(input_file, output_file):
@@ -400,51 +390,47 @@ def compare_api_option_list(input_file, output_file):
     all_results = []
 
     for idx, row in df_input.iterrows():
-        logger.info(f"--- Row {idx + 1}: Processing {row.to_dict()} ---")
+        row_index = idx + 1
+        logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")} ---")
 
         try:
             vin = row.get("VIN")
 
-            graphql_response = option_list_graphql(vin=vin)
-            rest_response = option_list_rest(vin=vin)
+            graphql_response = option_list_graphql(vin)
+            rest_response = option_list_rest(vin)
 
-            rest_norm = rest_response
             graphql_norm = get_object_by_key(graphql_response, "getOptionList.data")
+            rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_norm, row_index=idx + 1)
+            differences = compare_api_responses(graphql_norm, rest_norm, row_index)
 
-            rowDefault = {
-                    "RowIndex": idx + 1,
-                    "VIN": vin,
-                    "Field": "Responses",
-                    "Status": "",
-                    "REST": "",
-                    "GRAPHQL": "",
-                    "Rest Response": rest_norm,
-                    "GraphQL Response": graphql_norm
-                }
+            summary_row = {
+                "Row Index": row_index,
+                "VIN": vin,
+                "Field": "Summary",
+                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "REST": "",
+                "GRAPHQL": "",
+                "Rest Response": rest_norm,
+                "GraphQL Response": graphql_norm
+            }
 
-            if not differences:
-                rowDefault["Status"] = "Match"
-            else:
-                rowDefault["Status"] = "Not Match"
-
-            all_results.append(rowDefault)
-                
-            if differences:
-                all_results.extend(differences)
+            all_results.append(summary_row)
+            all_results.extend(differences)
 
         except Exception as ex:
-            logger.error(f"Error in row: {idx + 1}: {ex}")
+            logger.error(f"Error in row: {row_index}: {ex}")
             all_results.append({
-                "RowIndex": "",
+                "Row Index": row_index,
                 "VIN": "",
                 "Field": "",
                 "Status": f"ERROR: {ex}",
                 "REST": "",
-                "GRAPHQL": ""
+                "GRAPHQL": "",
+                "Rest Response": "",
+                "GraphQL Response": ""
             })
 
     df_output = pd.DataFrame(all_results)
-    write_output_excel(df_output, output_file)
+    write_output_excel_table(df_output, output_file)
     return all_results
