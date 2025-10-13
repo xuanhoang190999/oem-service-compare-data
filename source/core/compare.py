@@ -129,8 +129,31 @@ def custom_compare_api_responses(graphql_resp, rest_resp, row_index=1):
 
             all_fields = sorted(set(g_item.keys()).union(r_item.keys()))
             for field in all_fields:
+                g_has = field in g_item
+                r_has = field in r_item
                 g_val = g_item.get(field)
                 r_val = r_item.get(field)
+
+                if g_has and not r_has:
+                    differences.append({
+                        "Row Index": "",
+                        "Field": f"[{i}].{field}",
+                        "Status": "Missing in REST",
+                        "REST": "",
+                        "GRAPHQL": g_val
+                    })
+                    continue
+
+                if r_has and not g_has:
+                    differences.append({
+                        "Row Index": "",
+                        "Field": f"[{i}].{field}",
+                        "Status": "Missing in GraphQL",
+                        "REST": r_val,
+                        "GRAPHQL": ""
+                    })
+                    continue
+
                 if g_val != r_val:
                     differences.append({
                         "Row Index": "",

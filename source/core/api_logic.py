@@ -39,6 +39,8 @@ def compare_api_ymme(input_file, output_file):
             trim = safe_int(vin_info_response.get("trim_enum"))
             option = safe_int(vin_info_response.get("option_enum"))
 
+            logger.info(f"Year: {year}, Make: {make}, Model: {model}, Trim: {trim}, Option: {option}")
+
             graphql_response = get_ymme_graphql(
                 market=market, year=year, make=make, model=model, trim=trim, option=option
             )
@@ -402,7 +404,7 @@ def compare_api_option_list(input_file, output_file):
             graphql_norm = get_object_by_key(graphql_response, "getOptionList.data")
             rest_norm = rest_response
 
-            differences = compare_api_responses(graphql_norm, rest_norm, row_index)
+            differences = custom_compare_api_responses(graphql_norm, rest_norm, row_index)
 
             summary_row = {
                 "Row Index": row_index,
