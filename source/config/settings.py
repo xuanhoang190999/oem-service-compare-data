@@ -19,12 +19,12 @@ def load_config():
     return config
 
 def get_output_run_dir(base_dir="output"):
-    today = datetime.now().strftime("%Y%m%d")
+    today = datetime.now().strftime("%m-%d-%Y")
     date_dir = os.path.join(base_dir, today)
 
     run_index = 1
     while True:
-        run_dir = os.path.join(date_dir, f"{run_index}")
+        run_dir = os.path.join(date_dir, f"run_{run_index}")
         if not os.path.exists(run_dir):
             os.makedirs(run_dir, exist_ok=True)
             return run_dir
