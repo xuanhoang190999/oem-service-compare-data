@@ -5,10 +5,10 @@ from source.config.settings import APIS
 logger = setup_logger()
 
 def main():
-    logger.info("=== Start compare API ===")
+    logger.info("\n=== Start compare API ===\n\n")
 
     for api in APIS:
-        logger.info(f"--- Processing API: {api["name"]} ---")
+        logger.info(f"--- Processing API: {api["name"]} ---\n")
 
         name = api["name"]
         input_file = api["input"]
@@ -16,7 +16,7 @@ def main():
 
         process_api(name, input_file, output_file)
 
-    logger.info("=== Finish compare API ===")
+    logger.info("=== Finish compare API ===\n\n")
 
 if __name__ == "__main__":
     main()

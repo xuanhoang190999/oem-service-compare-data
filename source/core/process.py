@@ -5,8 +5,6 @@ from source.utils.utils import setup_logger
 logger = setup_logger()
 
 def process_api(name, input_file, output_file):
-    logger.info(f"--- Running process_api for: {name} ---")
-
     match name:
         case "YMME":
             compare_api_ymme(input_file, output_file)
