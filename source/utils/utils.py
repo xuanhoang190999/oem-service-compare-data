@@ -28,7 +28,6 @@ def setup_logger(name="compare_logger"):
 
     return logger
 
-
 def timestamp_now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -76,3 +75,18 @@ def get_object_by_key(resp, key=None):
             return None
 
     return current
+
+def get_language(lan: str):
+    match lan:
+        case "Unknown":
+            return 0
+        case "US":
+            return 1
+        case "MX":
+            return 2
+        case "FR":
+            return 3
+        case "VN":
+            return 6
+        case _:
+            return 1

@@ -12,7 +12,7 @@ def process_api(name, input_file, output_file):
             compare_api_vin_profile(input_file, output_file)
         case "Vehicle Profile":
             compare_api_vehicle_profile(input_file, output_file)
-        case "DTCs Definition":
+        case "DTC Parser":
             compare_api_dtcs_definition(input_file, output_file)
         case "OEM LiveData":
             compare_api_oem_livedata(input_file, output_file)

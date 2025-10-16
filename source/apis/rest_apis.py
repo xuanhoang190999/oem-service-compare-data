@@ -62,10 +62,10 @@ def vehicle_profile_rest(vin: str):
     }
     return call_rest_get("vehicle_profile", params)
 
-def dtcs_definition_rest(raw64: str):
+def dtcs_definition_rest(raw64: str, language: int):
     data = {
         "raw64": raw64,
-        "language": 1
+        "language": language
     }
 
     return call_rest_post("report", data)

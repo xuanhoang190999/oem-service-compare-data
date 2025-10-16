@@ -1,6 +1,6 @@
 import base64
 
-def build_oem_module_raw_data(vin_profile_raw: str, oem_module_raws: list) -> str:
+def build_oem_module_raw_data(vin_profile_raw: str, oem_module_raw: str) -> str:
     def string_to_byte_array(hex_str: str) -> bytes:
         return bytes.fromhex(hex_str)
     
@@ -21,11 +21,17 @@ def build_oem_module_raw_data(vin_profile_raw: str, oem_module_raws: list) -> st
         data_buffer.extend(segment)
     
     vin_bytes = string_to_byte_array(vin_profile_raw)
-    
+
     oem_bytes = bytearray()
-    oem_bytes.append(len(oem_module_raws))
-    for oem_hex in oem_module_raws:
-        oem_bytes.extend(string_to_byte_array(oem_hex))
+    if oem_module_raw:
+        oem_bytes = string_to_byte_array(oem_module_raw)
+    else:
+        oem_bytes.append(0)
+
+    # oem_bytes = bytearray()
+    # oem_bytes.append(len(oem_module_raws))
+    # for oem_hex in oem_module_raws:
+    #     oem_bytes.extend(string_to_byte_array(oem_hex))
     
     final_buffer = bytearray()
     append_buffer_segment(0, 1, vin_bytes, final_buffer)

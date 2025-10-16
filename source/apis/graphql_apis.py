@@ -36,10 +36,10 @@ def get_ymme_graphql(market: str, year=None, make=None, model=None, trim=None, o
 
     return call_graphql(query)
 
-def vin_profile_graphql(raw64: str):
+def vin_profile_graphql(raw64: str, language: int):
     query = f"""
     {{
-        report(raw64: "{raw64}", language: 1) {{
+        report(raw64: "{raw64}", language: {language}) {{
             vinProfile {{
                 vin
                 year
@@ -81,10 +81,10 @@ def vehicle_profile_graphql(vin: str):
 
     return call_graphql(query)
 
-def dtcs_definition_graphql(raw64: str):
+def dtcs_definition_graphql(raw64: str, language: int):
     query = f"""
     {{
-        report(raw64: "{raw64}", language: 1) {{
+        report(raw64: "{raw64}", language: {language}) {{
                 dtcs {{
                     code
                     definition

@@ -21,9 +21,9 @@
       "enabled": true
     },
     {
-      "name": "DTCs Definition",
-      "input": "dtcs_definition.xlsx",
-      "output": "dtcs_definition_result",
+      "name": "DTC Parser",
+      "input": "dtc_parse.xlsx",
+      "output": "dtc_parse_result",
       "enabled": true
     },
     {

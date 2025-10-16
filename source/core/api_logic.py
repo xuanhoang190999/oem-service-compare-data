@@ -1,6 +1,6 @@
 import pandas as pd
 from source.utils.excel_io import read_input_excel, write_output_excel_table
-from source.utils.utils import setup_logger, safe_int, normalize_for_compare, get_object_by_key
+from source.utils.utils import setup_logger, safe_int, normalize_for_compare, get_object_by_key, get_language
 
 from source.apis.graphql_apis import ( get_ymme_graphql, vin_profile_graphql, vehicle_profile_graphql, 
 dtcs_definition_graphql, oem_livedata_graphql, oem_module_name_graphql, option_list_graphql )
@@ -57,7 +57,7 @@ def compare_api_ymme(input_file, output_file):
                 "Row Index": row_index,
                 "VIN": vin,
                 "Field": "Summary",
-                "Status": "Match" if not differences else f"{len(differences)} Differences",
+                "Status": f"{len([d for d in differences if d['Status'].lower() != 'match'])} Differences",
                 "REST": "",
                 "GRAPHQL": "",
                 "Rest Response": rest_norm,
@@ -95,11 +95,14 @@ def compare_api_vin_profile(input_file, output_file):
         try:
             vin = row.get("VIN")
             vin_profile_raw = row.get("VINProfile")
+            lan = row.get("Language")
 
-            oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, [])
+            oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, "")
             logger.info(f"Raw64: {oem_module_raw_data}")
 
-            graphql_response = vin_profile_graphql(oem_module_raw_data)
+            language = get_language(lan)
+
+            graphql_response = vin_profile_graphql(oem_module_raw_data, language)
             rest_response = decode_vin_rest(vin)
 
             graphql_norm = get_object_by_key(graphql_response, "report.vinProfile")
@@ -145,9 +148,6 @@ def compare_api_vehicle_profile(input_file, output_file):
     for idx, row in df_input.iterrows():
         row_index = idx + 1
         logger.info(f"--- Row {row_index}: Processing VIN: {row.get("VIN")} ---")
-
-        # if (idx >= 20):
-        #     break
 
         try:
             vin = row.get("VIN")
@@ -201,15 +201,18 @@ def compare_api_dtcs_definition(input_file, output_file):
 
         try:
             vin = row.get("VIN")
+            lan = row.get("Language")
             vin_profile_raw = row.get("VINProfile")
             oem_module_buffer_raw = row.get("OEMModuleBuffer")
-            oem_module_buffer_raw_list = oem_module_buffer_raw.split(",")
+            # oem_module_buffer_raw_list = oem_module_buffer_raw.split(",")
 
-            oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, oem_module_buffer_raw_list)
+            oem_module_raw_data = build_oem_module_raw_data(vin_profile_raw, oem_module_buffer_raw)
             logger.info(f"Raw64: {oem_module_raw_data}")
 
-            graphql_response = dtcs_definition_graphql(raw64=oem_module_raw_data)
-            rest_response = dtcs_definition_rest(raw64=oem_module_raw_data)
+            language = get_language(lan)
+
+            graphql_response = dtcs_definition_graphql(raw64=oem_module_raw_data, language=language)
+            rest_response = dtcs_definition_rest(raw64=oem_module_raw_data, language=language)
 
             graphql_norm = get_object_by_key(graphql_response, "report.dtcs")
             rest_norm = rest_response
@@ -257,33 +260,23 @@ def compare_api_oem_livedata(input_file, output_file):
 
         try:
             vin = row.get("VIN")
-            service_check_raw = row.get("Payload")
+            service_check_raw = row.get("ServiceCheckRaw")
+            lan = row.get("Language")
 
             payloads = get_payloads_by_service_check_raw(vin, service_check_raw)
             logger.info(f"Payloads: {payloads}")
 
+            language = get_language(lan)
+
             graphql_response = oem_livedata_graphql(
-                vin=vin, payloads=payloads, language=1, unit_system=1
+                vin=vin, payloads=payloads, language=language, unit_system=1
             )
             rest_response = oem_livedata_rest(
-                vin=vin, payloads=payloads, language=1, unit_system=1
+                vin=vin, payloads=payloads, language=language, unit_system=1
             )
 
             graphql_norm = get_object_by_key(graphql_response, "oemLiveItems.data")
             rest_norm = rest_response
-
-            # graphql_norm = sorted(graphql_norm, key=lambda x: x.get("itemid", 0))
-
-            # graphql_norm.append({
-            #     "itemid": 114,
-            #     "itemname": None,
-            #     "itemname_enum": None,
-            #     "itemdescription": "Brake Pad Check",
-            #     "value": "Not present",
-            #     "unit": "",
-            #     "text": "Not present",
-            #     "itemdescription_enum": 1049
-            # })
 
             differences = custom_compare_api_responses(graphql_norm, rest_norm, row_index)
 

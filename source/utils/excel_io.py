@@ -43,6 +43,7 @@ def write_output_excel_table(df: pd.DataFrame, base_filename: str = "compare_res
     # --- Style setup ---
     header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
     red_fill = PatternFill(start_color="FAE2DE", end_color="FAE2DE", fill_type="solid")
+    gray_fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")
     border = Border(
         left=Side(style="thin", color="000000"),
         right=Side(style="thin", color="000000"),
@@ -55,6 +56,11 @@ def write_output_excel_table(df: pd.DataFrame, base_filename: str = "compare_res
         cell.fill = header_fill
         cell.font = Font(bold=True)
         cell.border = border
+
+    for idx, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row), start=2):
+        fill = gray_fill if idx % 2 == 0 else PatternFill()
+        for cell in row:
+            cell.fill = fill
 
     # --- Apply border + conditional red fill ---
     headers = [cell.value for cell in ws[1]]
@@ -69,9 +75,13 @@ def write_output_excel_table(df: pd.DataFrame, base_filename: str = "compare_res
             field_val = row[field_col - 1].value
             status_val = str(row[status_col - 1].value).lower() if row[status_col - 1].value else ""
 
-            if field_val == "Summary" and status_val != "match":
+            if status_val != "match" and field_val != "Summary":
                 for cell in row:
                     cell.fill = red_fill
+
+            if field_val == "Summary":
+                for cell in row:
+                    cell.font = Font(bold=True)
 
     # --- Auto filter ---
     ws.auto_filter.ref = ws.dimensions

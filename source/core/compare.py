@@ -162,6 +162,15 @@ def custom_compare_api_responses(graphql_resp, rest_resp, row_index=1):
                         "REST": r_val,
                         "GRAPHQL": g_val
                     })
+                else:
+                    differences.append({
+                        "Row Index": "",
+                        "Field": f"[{i}].{field}",
+                        "Status": "Match",
+                        "REST": r_val,
+                        "GRAPHQL": g_val
+                    })
+
     elif isinstance(graphql_resp, dict) and isinstance(rest_resp, dict):
         all_fields = sorted(set(graphql_resp.keys()).union(rest_resp.keys()))
         for field in all_fields:
@@ -191,6 +200,14 @@ def custom_compare_api_responses(graphql_resp, rest_resp, row_index=1):
                         "Row Index": "",
                         "Field": field,
                         "Status": "Different",
+                        "REST": r_val,
+                        "GRAPHQL": g_val
+                    })
+                else:
+                    differences.append({
+                        "Row Index": "",
+                        "Field": field,
+                        "Status": "Match",
                         "REST": r_val,
                         "GRAPHQL": g_val
                     })
